@@ -1,0 +1,936 @@
+/* ==========================================================================
+   Aetheria Sound · Masterpiece Style System
+   Adheres to: high-end-visual-design, emil-design-eng, gpt-taste, minimalist-ui, shader-dev
+   ========================================================================== */
+
+:root {
+  --primary-accent: #f59e0b;
+  --primary-glow: rgba(245, 158, 11, 0.45);
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-spring-apple: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html, body {
+  width: 100vw !important;
+  height: 100vh !important;
+  min-width: 100vw !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  position: fixed !important;
+  inset: 0 !important;
+  background-color: #050508 !important;
+}
+
+#ambient-container {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: radial-gradient(circle at 35% 40%, #151322 0%, #0a0912 55%, #050508 100%) !important;
+  overflow: hidden !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+}
+
+#main-stage {
+  position: relative !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-evenly !important;
+  z-index: 10 !important;
+  box-sizing: border-box !important;
+  padding: 4.2rem clamp(18px, 3vw, 70px) 5.2rem clamp(18px, 3vw, 70px) !important;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* =======================================================
+   1. FULLSCREEN AMBIENT SYSTEM (ZERO GPU BLUR COST)
+   ======================================================= */
+.ambient-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.12;
+  transition: opacity 0.8s ease;
+}
+
+#ambient-cover-front { opacity: 0.12; }
+#ambient-cover-back { opacity: 0; }
+
+.noise-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  opacity: 0.02;
+  pointer-events: none;
+  z-index: 2;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.ambient-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(5, 5, 10, 0.1) 0%, rgba(3, 3, 8, 0.6) 70%, rgba(0, 0, 0, 0.92) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* =======================================================
+   2. GLASS BUTTONS & NAVIGATION CHIPS
+   ======================================================= */
+.glass-pill-btn {
+  background: rgba(22, 22, 32, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9999px;
+  color: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  transition: all 0.24s var(--ease-spring-apple);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.glass-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.32);
+  color: #ffffff;
+  transform: translateY(-1.5px) scale(1.02);
+}
+
+.glass-pill-btn:active {
+  transform: translateY(0.5px) scale(0.95);
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.layout-pill-btn {
+  color: rgba(255, 255, 255, 0.6);
+  border: 1px solid transparent;
+  transition: all 0.24s var(--ease-spring-apple);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.layout-pill-btn:hover {
+  color: rgba(255, 255, 255, 0.9);
+  transform: scale(1.03);
+}
+.layout-pill-btn:active {
+  transform: scale(0.95);
+}
+.layout-pill-btn.active {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.dock-icon-btn {
+  background: transparent;
+  border: none;
+  transition: all 0.24s var(--ease-spring-apple);
+}
+.dock-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1.5px) scale(1.08);
+}
+.dock-icon-btn:active {
+  transform: scale(0.9);
+}
+
+.top-wave {
+  width: 2px;
+  background: #34d399;
+  border-radius: 1px;
+  height: 12px;
+  transform-origin: bottom;
+  transform: scaleY(0.25);
+  will-change: transform;
+}
+.is-playing .wave-1 { animation: miniWave 0.7s infinite alternate ease-in-out; }
+.is-playing .wave-2 { animation: miniWave 0.5s infinite alternate ease-in-out 0.2s; }
+.is-playing .wave-3 { animation: miniWave 0.8s infinite alternate ease-in-out 0.4s; }
+
+@keyframes miniWave {
+  0% { transform: scaleY(0.25); }
+  100% { transform: scaleY(1); }
+}
+
+/* =======================================================
+   3. 3D VINYL & SLEEVE ARCHITECTURE
+   ======================================================= */
+#album-column {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: clamp(320px, 36vw, 720px) !important;
+  max-width: 780px !important;
+}
+
+#cover-perspective-box {
+  perspective: 1200px;
+  transform-style: flat;
+  width: clamp(260px, 25vw, 560px) !important;
+  height: clamp(260px, 25vw, 560px) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+#cover-ambient-glow {
+  background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+  will-change: transform, opacity;
+  transition: transform 0.08s ease-out, opacity 0.08s ease-out;
+}
+
+#cover-card {
+  position: relative;
+  z-index: 10;
+  will-change: transform;
+  width: clamp(250px, 24vw, 540px) !important;
+  height: clamp(250px, 24vw, 540px) !important;
+  border-radius: clamp(20px, 1.8vw, 36px) !important;
+  background: #14141d !important;
+}
+
+#vinyl-disc {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  z-index: 1;
+  pointer-events: none;
+  width: clamp(240px, 23.5vw, 520px) !important;
+  height: clamp(240px, 23.5vw, 520px) !important;
+  contain: paint;
+  will-change: transform, right;
+  transition: right 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+#song-title {
+  font-size: clamp(1.8rem, 2.8vw, 4.4rem) !important;
+  line-height: 1.25 !important;
+  letter-spacing: -0.02em;
+}
+
+#song-artist {
+  font-size: clamp(1rem, 1.4vw, 2.2rem) !important;
+}
+
+.sleeve-sheen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0) 40%, rgba(255,255,255,0) 65%, rgba(255,255,255,0.08) 100%);
+  pointer-events: none;
+}
+
+.vinyl-body {
+  background: radial-gradient(circle, #252528 0%, #131315 28%, #070708 55%, #18181c 70%, #0d0d10 100%);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.75);
+}
+
+.vinyl-groove {
+  position: absolute;
+  inset: 14px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.6);
+}
+
+.vinyl-label-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 82px;
+  height: 82px;
+  border-radius: 9999px;
+  background-size: cover;
+  background-position: center;
+  border: 3px solid #1a1a1a;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+}
+
+.vinyl-spindle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: #f1f1f1;
+  border: 2px solid #555;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.6);
+}
+
+@keyframes spinVinyl {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.vinyl-playing {
+  right: -60px !important;
+  animation: spinVinyl 16s linear infinite;
+}
+
+@media (max-width: 768px) {
+  .vinyl-playing {
+    right: -25px !important;
+  }
+}
+
+.vis-bar {
+  width: 2.5px;
+  background: #38bdf8;
+  border-radius: 2px;
+  height: 16px;
+  transform-origin: bottom;
+  transform: scaleY(0.25);
+  transition: transform 0.15s ease;
+  will-change: transform;
+}
+
+.is-playing:not(.has-live-fft) .bar-1 { animation: pulseVis 0.6s infinite ease-in-out alternate; }
+.is-playing:not(.has-live-fft) .bar-2 { animation: pulseVis 0.85s infinite ease-in-out alternate 0.15s; }
+.is-playing:not(.has-live-fft) .bar-3 { animation: pulseVis 0.5s infinite ease-in-out alternate 0.3s; }
+.is-playing:not(.has-live-fft) .bar-4 { animation: pulseVis 0.7s infinite ease-in-out alternate 0.1s; }
+
+.has-live-fft .vis-bar {
+  animation: none !important;
+  transition: transform 0.06s cubic-bezier(0.1, 0.9, 0.2, 1);
+}
+
+@keyframes pulseVis {
+  0% { transform: scaleY(0.25); }
+  100% { transform: scaleY(1); }
+}
+
+/* =======================================================
+   4. APPLE MUSIC LIKE LYRICS (AMLL) 3D OPTICAL DOF
+   ======================================================= */
+#lyrics-column {
+  position: relative;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+#lyrics-container {
+  scroll-behavior: auto !important;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.5) 5%, #000 15%, #000 85%, rgba(0, 0, 0, 0.5) 95%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.5) 5%, #000 15%, #000 85%, rgba(0, 0, 0, 0.5) 95%, transparent 100%);
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.lyric-line {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transform-origin: left center;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.45s ease;
+  padding: 10px 18px;
+  border-radius: 20px;
+  width: 100%;
+  will-change: transform, opacity, filter;
+  -webkit-font-smoothing: antialiased;
+}
+
+.lyric-line:active {
+  transform: scale(0.95) !important;
+  transition: transform 0.08s ease !important;
+}
+
+.lyric-main {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Noto Serif SC", "Outfit", sans-serif;
+  font-size: clamp(1.4rem, 2.1vw, 2.35rem);
+  line-height: 1.36;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.36);
+  letter-spacing: -0.015em;
+  transition: color 0.35s var(--ease-smooth), opacity 0.35s var(--ease-smooth);
+}
+
+.lyric-trans {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Plus Jakarta Sans", sans-serif;
+  font-size: clamp(0.95rem, 1.15vw, 1.35rem);
+  font-weight: 400;
+  margin-top: clamp(4px, 0.4vw, 8px);
+  color: rgba(255, 255, 255, 0.24);
+  letter-spacing: 0.01em;
+  transition: color 0.35s var(--ease-smooth), opacity 0.35s var(--ease-smooth);
+}
+
+/* --- Apple Music Optical Depth-of-Field (DoF) System --- */
+.lyric-line.dof-0 {
+  opacity: 1 !important;
+  filter: blur(0px) !important;
+  transform: scale(1.05) translateX(clamp(4px, 0.6vw, 10px)) translateZ(0);
+}
+
+body.mode-lyric-focus .lyric-line.dof-0 {
+  transform: scale(1.06) translateY(0) translateZ(0) !important;
+}
+
+.lyric-line.dof-0 .lyric-main {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  text-shadow: 0 0 28px var(--primary-glow, rgba(245, 158, 11, 0.5)), 0 2px 10px rgba(0, 0, 0, 0.85) !important;
+}
+
+.lyric-line.dof-0 .lyric-trans {
+  color: rgba(255, 255, 255, 0.90) !important;
+  font-weight: 500 !important;
+}
+
+/* DoF Level 1: Adjacent lines (Subtle depth) */
+.lyric-line.dof-1 {
+  opacity: 0.58 !important;
+  filter: blur(0.7px) !important;
+  transform: scale(0.97) translateZ(0);
+}
+.lyric-line.dof-1 .lyric-main {
+  color: rgba(255, 255, 255, 0.75);
+}
+.lyric-line.dof-1 .lyric-trans {
+  color: rgba(255, 255, 255, 0.48);
+}
+
+/* DoF Level 2: 2 lines away (Mid defocus) */
+.lyric-line.dof-2 {
+  opacity: 0.32 !important;
+  filter: blur(1.8px) !important;
+  transform: scale(0.92) translateZ(0);
+}
+.lyric-line.dof-2 .lyric-main {
+  color: rgba(255, 255, 255, 0.48);
+}
+.lyric-line.dof-2 .lyric-trans {
+  color: rgba(255, 255, 255, 0.28);
+}
+
+/* DoF Level 3+: Deep background field (Strong optical defocus) */
+.lyric-line.dof-3plus {
+  opacity: 0.14 !important;
+  filter: blur(3.2px) !important;
+  transform: scale(0.86) translateZ(0);
+}
+.lyric-line.dof-3plus .lyric-main {
+  color: rgba(255, 255, 255, 0.26);
+}
+.lyric-line.dof-3plus .lyric-trans {
+  color: rgba(255, 255, 255, 0.14);
+}
+
+/* Hover override for line jumping */
+.lyric-line:hover {
+  opacity: 0.95 !important;
+  filter: blur(0px) !important;
+  transform: translateX(6px) scale(0.99) translateZ(0) !important;
+}
+body.mode-lyric-focus .lyric-line:hover {
+  transform: scale(1.02) translateZ(0) !important;
+}
+.lyric-line:hover .lyric-main {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+.lyric-line:hover .lyric-trans {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+
+/* =======================================================
+   5. VIEW MODES (MINERADIO CINEMATIC STAGE)
+   ======================================================= */
+body.mode-lyric-focus #main-stage {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+}
+
+body.mode-lyric-focus #album-column {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: scale(0.88) !important;
+  position: absolute !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transition: opacity 0.65s cubic-bezier(0.32, 0.72, 0, 1), transform 0.65s cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+
+body.mode-lyric-focus #lyrics-column {
+  width: 100% !important;
+  max-width: min(88vw, 1000px) !important;
+  height: 76vh !important;
+  margin: 0 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  transition: all 0.65s cubic-bezier(0.32, 0.72, 0, 1) !important;
+  z-index: 10 !important;
+}
+
+body.mode-lyric-focus #lyrics-container {
+  text-align: center !important;
+  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.5) 8%, #000 20%, #000 80%, rgba(0, 0, 0, 0.5) 92%, transparent 100%) !important;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.5) 8%, #000 20%, #000 80%, rgba(0, 0, 0, 0.5) 92%, transparent 100%) !important;
+}
+
+body.mode-lyric-focus .lyric-line {
+  align-items: center !important;
+  text-align: center !important;
+  transform-origin: center center !important;
+}
+
+body.mode-lyric-focus .lyric-line .lyric-main {
+  font-size: clamp(1.8rem, 2.7vw, 3.2rem) !important;
+  text-shadow: 0 4px 28px rgba(0, 0, 0, 0.95), 0 2px 8px rgba(0, 0, 0, 0.9) !important;
+}
+
+body.mode-lyric-focus .lyric-line .lyric-trans {
+  font-size: clamp(1.05rem, 1.3vw, 1.65rem) !important;
+  text-shadow: 0 3px 20px rgba(0, 0, 0, 0.95), 0 1px 4px rgba(0, 0, 0, 0.9) !important;
+}
+
+body.mode-lyric-focus .lyric-line.dof-0 .lyric-main {
+  color: #ffffff !important;
+}
+
+body.mode-lyric-focus .lyric-line.dof-0 .lyric-trans {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+body.mode-lyric-focus .ambient-layer,
+body.zen-active .ambient-layer {
+  opacity: 0.03 !important;
+  transition: opacity 0.8s ease;
+}
+
+#ambient-theme-fill {
+  background: radial-gradient(circle at 50% 50%, #06060a 0%, #080810 32%, var(--theme-particle-glow, rgba(245, 158, 11, 0.16)) 72%, #030306 100%);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), background 0.8s ease;
+  z-index: 2;
+  transform: translateZ(0);
+  will-change: opacity;
+}
+
+#ambient-theme-fill.active {
+  opacity: 1 !important;
+}
+
+#particle-stage-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateZ(0);
+  will-change: opacity;
+}
+
+#particle-stage-canvas.active {
+  opacity: 1 !important;
+}
+
+body.mode-split #album-column {
+  opacity: 1 !important;
+  transform: translateX(0px) scale(1) !important;
+  pointer-events: auto !important;
+  position: relative !important;
+  width: clamp(260px, 30vw, 460px) !important;
+  height: auto !important;
+  transition: opacity 0.65s cubic-bezier(0.32, 0.72, 0, 1), transform 0.65s cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+
+body.mode-split #lyrics-column {
+  width: 100% !important;
+  max-width: min(65vw, 1200px) !important;
+  flex: 1 1 0% !important;
+  height: 76vh !important;
+}
+
+body.mode-split .lyric-line {
+  align-items: flex-start !important;
+  text-align: left !important;
+  transform-origin: left center !important;
+}
+
+#resonance-mode-pill {
+  position: fixed !important;
+  bottom: 84px !important;
+  left: 24px !important;
+  z-index: 35 !important;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s var(--ease-spring-apple), transform 0.25s ease;
+}
+
+body.mode-lyric-focus #resonance-mode-pill,
+body.zen-active #resonance-mode-pill {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+@media (max-width: 768px) {
+  #resonance-mode-pill {
+    bottom: 96px !important;
+    left: 14px !important;
+  }
+}
+
+#bottom-dock-wrapper {
+  position: fixed !important;
+  bottom: 14px !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 50 !important;
+  display: flex !important;
+  justify-content: center !important;
+  padding: 0 clamp(8px, 1.5vw, 24px) !important;
+  pointer-events: auto !important;
+  transition: opacity 0.35s var(--ease-smooth);
+}
+
+#bottom-dock {
+  background: #0e0e16 !important;
+  width: min(94vw, 1080px) !important;
+  max-width: 1080px !important;
+  padding: 9px 18px !important;
+  border-radius: 26px !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.82), inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
+}
+
+#bottom-dock .dock-icon-btn {
+  padding: 6px !important;
+  border-radius: 10px !important;
+}
+
+#play-btn {
+  padding: 4px !important;
+}
+
+#play-btn > div {
+  width: 48px !important;
+  height: 48px !important;
+}
+
+@media (max-height: 820px) {
+  #main-stage {
+    padding: 3.8rem clamp(14px, 2vw, 40px) 5.2rem clamp(14px, 2vw, 40px) !important;
+  }
+  #cover-perspective-box {
+    width: clamp(170px, 24vh, 230px) !important;
+    height: clamp(170px, 24vh, 230px) !important;
+  }
+  #cover-card, #vinyl-disc {
+    width: clamp(170px, 24vh, 230px) !important;
+    height: clamp(170px, 24vh, 230px) !important;
+  }
+  #song-meta {
+    margin-top: 10px !important;
+  }
+  #song-title {
+    font-size: 1.5rem !important;
+  }
+  #song-artist {
+    font-size: 0.82rem !important;
+  }
+  #bottom-dock-wrapper {
+    bottom: 8px !important;
+  }
+  #bottom-dock {
+    padding: 6px 14px !important;
+    border-radius: 20px !important;
+  }
+  #play-btn > div {
+    width: 42px !important;
+    height: 42px !important;
+  }
+  #play-btn svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  #lyrics-column {
+    height: 70vh !important;
+  }
+}
+
+@media (max-height: 680px) {
+  #top-bar {
+    padding: 6px 16px !important;
+  }
+  #main-stage {
+    padding: 2.8rem 12px 4.4rem 12px !important;
+  }
+  #cover-perspective-box {
+    width: clamp(120px, 18vh, 160px) !important;
+    height: clamp(120px, 18vh, 160px) !important;
+  }
+  #cover-card, #vinyl-disc {
+    width: clamp(120px, 18vh, 160px) !important;
+    height: clamp(120px, 18vh, 160px) !important;
+  }
+  #song-meta {
+    margin-top: 6px !important;
+  }
+  #song-title {
+    font-size: 1.2rem !important;
+  }
+  #song-artist {
+    font-size: 0.72rem !important;
+  }
+  #bottom-dock-wrapper {
+    bottom: 4px !important;
+  }
+  #bottom-dock {
+    padding: 4px 10px !important;
+    border-radius: 16px !important;
+  }
+  #play-btn > div {
+    width: 36px !important;
+    height: 36px !important;
+  }
+  #lyrics-column {
+    height: 65vh !important;
+  }
+}
+
+@media (min-width: 2200px) {
+  #top-bar {
+    padding: 30px 60px !important;
+  }
+  #top-song-desc {
+    max-width: 480px !important;
+    font-size: 0.95rem !important;
+  }
+  .layout-pill-btn {
+    font-size: 0.92rem !important;
+    padding: 8px 20px !important;
+  }
+  .glass-pill-btn {
+    font-size: 0.92rem !important;
+    padding: 8px 18px !important;
+  }
+  #bottom-dock .dock-icon-btn svg {
+    width: 22px !important;
+    height: 22px !important;
+  }
+  #current-time, #duration-time {
+    font-size: 14px !important;
+    width: 50px !important;
+  }
+  #play-btn > div {
+    width: 58px !important;
+    height: 58px !important;
+  }
+}
+
+body.zen-active #top-bar,
+body.zen-active #bottom-dock-wrapper {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* =======================================================
+   6. RAYCAST COMMAND SEARCH PALETTE & MODALS
+   ======================================================= */
+#command-palette-modal,
+#card-share-modal,
+#help-modal {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s var(--ease-spring);
+}
+
+#command-palette-modal.show,
+#card-share-modal.show,
+#help-modal.show {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.search-row {
+  transition: all 0.18s var(--ease-spring);
+  border-radius: 14px;
+}
+.search-row:hover,
+.search-row.active {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateX(4px);
+}
+
+.chart-tag-btn {
+  transition: all 0.2s ease;
+}
+.chart-tag-btn.active {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+/* Soundstage FX Active Indicator */
+#soundstage-btn.active {
+  color: #34d399 !important;
+  background: rgba(52, 211, 153, 0.15);
+}
+
+/* Playlist Drawer & Rows */
+.playlist-row {
+  transition: all 0.2s var(--ease-spring);
+  border-radius: 16px;
+}
+.playlist-row:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.playlist-row.active {
+  background: rgba(255, 255, 255, 0.16);
+  border-left: 3px solid var(--primary-accent);
+}
+
+/* =======================================================
+   7. SWIFTUI SPRING PHYSICS & DYNAMIC ISLAND
+   ======================================================= */
+.swiftui-spring {
+  transition: transform 0.4s var(--ease-spring-apple), box-shadow 0.3s ease, background 0.25s ease;
+}
+.swiftui-spring:hover {
+  transform: translateY(-1.5px) scale(1.02);
+}
+.swiftui-spring:active {
+  transform: translateY(1px) scale(0.94) !important;
+}
+
+#brand-tag {
+  transition: all 0.35s var(--ease-spring-apple);
+  border-radius: 9999px;
+  padding: 4px 14px 4px 4px;
+}
+#brand-tag:hover {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  transform: scale(1.02);
+}
+#brand-tag:active {
+  transform: scale(0.96);
+}
+
+/* Dynamic Island Expansion Panel */
+#dynamic-island-modal {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px) scale(0.95);
+  transition: opacity 0.3s var(--ease-smooth), transform 0.35s var(--ease-spring-apple);
+}
+#dynamic-island-modal.show {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: translateY(0) scale(1) !important;
+}
+
+/* Raycast Command Palette Modal */
+#command-palette-modal {
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+#command-palette-modal.show {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.search-row {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid transparent;
+}
+.search-row:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateX(3px);
+}
+.search-row.active {
+  background: rgba(255, 255, 255, 0.14) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  transform: translateX(4px);
+}
+
+/* NetEase Cloud Music Import Modal */
+#netease-modal {
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+#netease-modal.show {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Multi-Platform Search Source Tabs */
+.search-source-tab {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid transparent;
+}
+.search-source-tab:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+.search-source-tab.active {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.hot-search-chip {
+  transition: all 0.18s ease;
+}
+.hot-search-chip:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+.hot-search-chip:active {
+  transform: translateY(0) scale(0.95);
+}
+
+/* Floating Toast Notification */
+#app-toast {
+  transform: translate(-50%, -12px);
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+#app-toast.show {
+  opacity: 1 !important;
+  transform: translate(-50%, 0) !important;
+  pointer-events: auto !important;
+}
