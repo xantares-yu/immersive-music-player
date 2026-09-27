@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aetheria Sound · 沉浸式流光音乐</title>
+  <!-- Google Fonts: Plus Jakarta Sans, Outfit, Cinzel, Noto Serif SC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            display: ['"Outfit"', 'sans-serif'],
+            serif: ['"Noto Serif SC"', 'serif'],
+            brand: ['"Cinzel"', 'serif'],
+          },
+          colors: {
+            surface: {
+              glass: 'rgba(255, 255, 255, 0.08)',
+              glassHover: 'rgba(255, 255, 255, 0.15)',
+              border: 'rgba(255, 255, 255, 0.12)',
+              borderGlow: 'rgba(255, 255, 255, 0.28)',
+              island: 'rgba(12, 12, 18, 0.75)',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="bg-[#050508] text-white select-none overflow-hidden h-screen w-screen font-sans antialiased mode-split">
+
+  <!-- ======================================================= -->
+  <!-- 1. FULLSCREEN AMBIENT SYSTEM                            -->
+  <!-- ======================================================= -->
+  <div id="ambient-container" class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+    <!-- Layer A: Fullscreen Cover with Slow Ken Burns Pan/Zoom -->
+    <div id="ambient-cover-back" class="ambient-layer ken-burns"></div>
+    <div id="ambient-cover-front" class="ambient-layer ken-burns"></div>
+
+    <!-- Layer B: Luxury Film Grain Noise (High-End Visual Design) -->
+    <div class="noise-overlay"></div>
+
+    <!-- Layer C: Soft Vignette -->
+    <div class="ambient-vignette"></div>
+
+    <!-- Layer D: Mineradio Dynamic Theme Color Flood Fill -->
+    <div id="ambient-theme-fill" class="absolute inset-0 opacity-0 pointer-events-none"></div>
+
+    <!-- Layer E: Mineradio Audio-Resonant Particle Field Canvas -->
+    <canvas id="particle-stage-canvas" class="absolute inset-0 w-full h-full pointer-events-none opacity-0"></canvas>
+  </div>
+
+  <!-- ======================================================= -->
+  <!-- 2. TOP FLOATING ISLAND BAR                              -->
+  <!-- ======================================================= -->
+  <header id="top-bar" class="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-6 md:px-12 py-5 transition-all duration-500 ease-out">
+    
+    <!-- Brand / Now Playing Mini Pill -->
+    <div class="flex items-center gap-3.5 group cursor-pointer" id="brand-tag">
+      <div class="relative w-10 h-10 rounded-xl overflow-hidden p-0.5 bg-white/10 border border-white/20 shadow-xl transition-all duration-300 group-hover:scale-105 active:scale-95">
+        <img id="top-mini-cover" src="" alt="Album Art" class="w-full h-full object-cover rounded-[10px]" />
+        <div class="absolute inset-0 bg-black/60 flex items-center justify-center gap-0.5 opacity-90">
+          <span class="top-wave wave-1"></span>
+          <span class="top-wave wave-2"></span>
+          <span class="top-wave wave-3"></span>
+        </div>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-sm font-bold tracking-wider uppercase font-display bg-gradient-to-r from-white via-white/95 to-white/70 bg-clip-text text-transparent">
+            AETHERIA SOUND
+          </h1>
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-semibold tracking-widest uppercase bg-white/10 border border-white/15 text-emerald-400">
+            HI-RES 96kHz
+          </span>
+        </div>
+        <p id="top-song-desc" class="text-xs text-white/60 truncate max-w-xs font-medium">
+          周杰伦 · 七里香
+        </p>
+      </div>
+    </div>
+
+    <!-- Center Segmented Pill Switcher -->
+    <div class="hidden md:flex items-center p-1 rounded-full bg-[#12121a] border border-white/10 shadow-lg shrink-0 whitespace-nowrap">
+      <button id="mode-split-btn" class="layout-pill-btn active px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shrink-0 transition-all" data-mode="split">
+        黑胶唱机分栏
+      </button>
+      <button id="mode-lyric-btn" class="layout-pill-btn px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shrink-0 transition-all" data-mode="lyric-focus">
+        全屏沉浸歌词
+      </button>
+      <button id="mode-zen-btn" class="layout-pill-btn px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shrink-0 transition-all" data-mode="zen">
+        极简禅境
+      </button>
+    </div>
+
+    <!-- Right Controls: Command Search, Share Card, Local Import, Fullscreen -->
+    <div class="flex items-center space-x-2.5">
+      <!-- Raycast Command Search Button (Cmd+K) -->
+      <button id="search-trigger-btn" class="glass-pill-btn flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium whitespace-nowrap shrink-0" title="全网搜歌与榜单 (快捷键: Cmd/Ctrl + K 或 /)">
+        <svg class="w-3.5 h-3.5 text-white/80 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <span class="whitespace-nowrap hidden sm:inline">全网搜歌</span>
+        <kbd class="hidden md:inline-block px-1.5 py-0.5 rounded bg-white/15 text-[10px] font-mono text-white/70">⌘K</kbd>
+      </button>
+
+      <!-- Share Lyric Card Button -->
+      <button id="share-card-btn" class="glass-pill-btn p-2 text-xs" title="生成并分享歌词卡片海报">
+        <svg class="w-4 h-4 text-white/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+          <polyline points="16 6 12 2 8 6"/>
+          <line x1="12" y1="2" x2="12" y2="15"/>
+        </svg>
+      </button>
+
+      <!-- NetEase Cloud Music Import Button -->
+      <button id="netease-import-btn" class="glass-pill-btn flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium whitespace-nowrap shrink-0 hover:border-red-500/50" title="导入网易云音乐歌单 / 单曲">
+        <svg class="w-3.5 h-3.5 text-red-500 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/>
+        </svg>
+        <span class="hidden sm:inline">导入网易云</span>
+      </button>
+
+      <!-- Local File Upload -->
+      <label class="glass-pill-btn flex items-center gap-1.5 px-3 py-2 text-xs font-medium cursor-pointer" title="导入本地音频 / LRC">
+        <input type="file" id="local-file-input" accept="audio/*,.lrc" multiple class="hidden" />
+        <svg class="w-3.5 h-3.5 text-white/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+      </label>
+
+      <!-- Fullscreen Toggle -->
+      <button id="fullscreen-btn" class="glass-pill-btn p-2 text-xs" title="全屏模式 (F)">
+        <svg class="w-4 h-4 text-white/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+        </svg>
+      </button>
+
+      <!-- Help / Guide -->
+      <button id="help-btn" class="glass-pill-btn p-2 text-xs" title="快捷键与体验指南">
+        <svg class="w-4 h-4 text-white/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ======================================================= -->
+  <!-- 3. MAIN IMMERSIVE STAGE                                 -->
+  <!-- ======================================================= -->
+  <main id="main-stage" class="relative z-10 w-full h-full flex items-center justify-evenly px-6 md:px-16 lg:px-24 pt-16 pb-28">
+    
+    <!-- LEFT: 3D Acrylic Vinyl & Metadata (Split Mode) -->
+    <section id="album-column" class="flex flex-col items-center justify-center w-full md:w-5/12 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]">
+      
+      <div id="cover-perspective-box" class="relative group cursor-pointer select-none">
+        <div id="cover-ambient-glow" class="absolute -inset-4 rounded-full opacity-40 transition-all duration-700 pointer-events-none"></div>
+
+        <!-- Physical Vinyl Disc -->
+        <div id="vinyl-disc" class="absolute top-3 right-3 w-64 h-64 md:w-80 md:h-80 rounded-full vinyl-body shadow-2xl transition-all duration-700 ease-out z-0 pointer-events-none">
+          <div class="vinyl-groove"></div>
+          <div class="vinyl-label-center" id="vinyl-center-img"></div>
+          <div class="vinyl-spindle"></div>
+        </div>
+
+        <!-- Double-Bezel Acrylic Sleeve -->
+        <div id="cover-card" class="relative z-10 w-64 h-64 md:w-80 md:h-80 rounded-[26px] p-2.5 bg-[#14141d] border border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.2)] transition-transform duration-300 ease-out">
+          <div class="relative w-full h-full rounded-[20px] overflow-hidden shadow-inner bg-black/60">
+            <img id="cover-image" src="" alt="Album Art" class="w-full h-full object-cover transition-opacity duration-500" />
+            <div class="sleeve-sheen pointer-events-none"></div>
+
+            <!-- Audio Wave Meter Indicator -->
+            <div class="absolute bottom-3 right-3 px-2.5 py-1 rounded-full bg-black/85 border border-white/20 flex items-center gap-1 z-20">
+              <span class="vis-bar bar-1"></span>
+              <span class="vis-bar bar-2"></span>
+              <span class="vis-bar bar-3"></span>
+              <span class="vis-bar bar-4"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="song-meta" class="mt-8 text-center w-full px-4">
+        <div class="flex items-center justify-center gap-2 mb-2">
+          <span id="genre-badge" class="px-3 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase bg-white/15 border border-white/20 text-white/90">
+            POP / CLASSIC
+          </span>
+          <span id="track-number-badge" class="text-xs text-white/40 font-mono">01 / 05</span>
+        </div>
+        <h2 id="song-title" class="text-2xl md:text-4xl font-extrabold tracking-tight font-display text-white drop-shadow-lg">
+          七里香
+        </h2>
+        <p id="song-artist" class="text-sm md:text-lg text-white/70 font-medium mt-1.5 tracking-wide">
+          周杰伦 · 经典回顾
+        </p>
+      </div>
+    </section>
+
+    <!-- RIGHT: Apple Music Sing Seamless Mask Lyric Stream -->
+    <section id="lyrics-column" class="relative w-full md:w-7/12 h-[68vh] md:h-[78vh] flex flex-col justify-center items-center transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]">
+      
+      <div id="lyrics-container" class="w-full h-full overflow-y-auto overflow-x-hidden scrollbar-none px-4 md:px-12 py-[30vh]">
+        <div id="lyrics-list" class="flex flex-col space-y-8 md:space-y-11 transition-transform duration-500 ease-out">
+          <!-- Lyrics injected by JavaScript -->
+        </div>
+      </div>
+
+      <!-- Floating Jump-Back Button -->
+      <button id="resume-scroll-btn" class="absolute bottom-4 right-6 hidden glass-pill-btn flex items-center gap-1.5 px-3.5 py-1.5 text-xs text-white/90 animate-bounce shadow-2xl">
+        <svg class="w-3.5 h-3.5 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+        回到当前歌词
+      </button>
+
+      <!-- Floating Resonance Mode Switcher Pill (Visible in Immersive Mode) -->
+      <button id="resonance-mode-pill" class="glass-pill-btn flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium tracking-wide shadow-2xl transition-all duration-300" title="点击切换粒子共振模式 (快捷键: R 或 V)">
+        <span id="resonance-mode-icon" class="text-sm">🌊</span>
+        <span id="resonance-mode-text">共振: 水波涟漪</span>
+        <kbd class="px-1.5 py-0.5 rounded bg-white/10 text-[9px] font-mono text-white/60">R</kbd>
+      </button>
+    </section>
+  </main>
+
+  <!-- ======================================================= -->
+  <!-- 4. BOTTOM DOCK: HIGH-PERFORMANCE FLOATING ISLAND        -->
+  <!-- ======================================================= -->
+  <footer id="bottom-dock-wrapper" class="absolute bottom-6 left-0 right-0 z-40 flex justify-center px-4 pointer-events-auto transition-all duration-500">
+    <div id="bottom-dock" class="relative w-full max-w-5xl rounded-[32px] p-3.5 md:p-4 bg-[#0e0e16] border border-white/15 shadow-[0_30px_70px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.15)] flex flex-col gap-2.5 transition-all duration-500 ease-out">
+      
+      <!-- Top Scrubber: Time + Hover Progress Bar -->
+      <div class="w-full flex items-center gap-3.5 px-2">
+        <span id="current-time" class="text-[11px] font-mono font-medium text-white/60 w-10 text-right">0:00</span>
+        
+        <div id="progress-container" class="relative flex-1 h-5 flex items-center cursor-pointer group py-2">
+          <div class="w-full h-1.5 bg-white/15 rounded-full overflow-hidden transition-all duration-200 group-hover:h-2">
+            <div id="progress-bar" class="h-full bg-gradient-to-r from-white/80 via-white to-white rounded-full transition-all ease-linear relative"></div>
+          </div>
+          <div id="progress-handle" class="absolute top-1/2 -translate-y-1/2 -ml-2.5 w-5 h-5 rounded-full bg-white shadow-[0_2px_12px_rgba(0,0,0,0.6)] scale-0 group-hover:scale-100 transition-transform duration-200 pointer-events-none"></div>
+          <div id="hover-tooltip" class="absolute -top-7 -translate-x-1/2 px-2 py-0.5 rounded-md text-[10px] font-mono bg-black/90 text-white border border-white/15 opacity-0 pointer-events-none transition-opacity duration-150 shadow-lg">
+            0:00
+          </div>
+        </div>
+
+        <span id="duration-time" class="text-[11px] font-mono font-medium text-white/60 w-10">0:00</span>
+      </div>
+
+      <!-- Bottom Controls: Playback, Soundstage, Volume, Playlist -->
+      <div class="flex items-center justify-between px-2">
+        
+        <!-- Left: Play Mode, Soundstage FX, Visualizer -->
+        <div class="flex items-center gap-1.5 w-1/4">
+          <button id="play-mode-btn" class="dock-icon-btn p-2 rounded-xl text-white/65 hover:text-white" title="播放模式: 列表循环">
+            <svg id="play-mode-icon" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="17 1 21 5 17 9"/>
+              <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+              <polyline points="7 23 3 19 7 15"/>
+              <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+            </svg>
+          </button>
+
+          <!-- Spatial Vinyl Soundstage FX Toggle -->
+          <button id="soundstage-btn" class="dock-icon-btn p-2 rounded-xl text-white/65 hover:text-white" title="黑胶氛围音效与空间混响 (开/关)">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+
+          <!-- Fluid Shader Particles Toggle -->
+          <button id="visualizer-toggle-btn" class="dock-icon-btn p-2 rounded-xl text-sky-400 hover:text-white" title="切换背景流体着色器动效">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 20v-8m0-4V4m-6 16v-4m0-4V4m12 16v-6m0-4V4"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Center: Prev, Spring Play Button, Next -->
+        <div class="flex items-center justify-center gap-4 flex-1">
+          <button id="prev-btn" class="dock-icon-btn p-2.5 rounded-2xl text-white/80 hover:text-white active:scale-90 transition-transform" title="上一首 (←)">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+              <polygon points="19 20 9 12 19 4 19 20"/>
+              <line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+
+          <!-- Double Bezel Primary Button -->
+          <button id="play-btn" class="relative group p-1.5 rounded-full bg-white/10 border border-white/25 shadow-xl active:scale-95 transition-all duration-200">
+            <div class="w-13 h-13 md:w-14 md:h-14 rounded-full bg-white text-black flex items-center justify-center shadow-[inset_0_1px_2px_rgba(255,255,255,0.9),0_8px_25px_rgba(0,0,0,0.5)] group-hover:bg-white/95 transition-all">
+              <svg id="play-icon" class="w-6 h-6 fill-current translate-x-0.5" viewBox="0 0 24 24">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              <svg id="pause-icon" class="w-6 h-6 fill-current hidden" viewBox="0 0 24 24">
+                <rect x="6" y="4" width="4" height="16" rx="1.5"/>
+                <rect x="14" y="4" width="4" height="16" rx="1.5"/>
+              </svg>
+            </div>
+          </button>
+
+          <button id="next-btn" class="dock-icon-btn p-2.5 rounded-2xl text-white/80 hover:text-white active:scale-90 transition-transform" title="下一首 (→)">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+              <polygon points="5 4 15 12 5 20 5 4"/>
+              <line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Right: Volume & Playlist Drawer -->
+        <div class="flex items-center justify-end gap-2.5 w-1/4">
+          <div class="relative flex items-center group">
+            <button id="volume-btn" class="dock-icon-btn p-2 rounded-xl text-white/70 hover:text-white" title="静音 / 调节音量 (M)">
+              <svg id="vol-icon" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+              </svg>
+            </button>
+            <div class="hidden sm:flex items-center w-20 h-5 px-1 cursor-pointer" id="volume-slider-box">
+              <div class="w-full h-1 bg-white/20 rounded-full overflow-hidden">
+                <div id="volume-bar" class="h-full bg-white rounded-full w-[80%]"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dock Search Trigger Button -->
+          <button id="dock-search-btn" class="dock-icon-btn px-2.5 py-1.5 rounded-xl text-white/75 hover:text-white flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 transition-all" title="全网搜歌 (Cmd/Ctrl + K 或 /)">
+            <svg class="w-3.5 h-3.5 text-white/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <span class="text-xs font-medium hidden sm:inline">搜歌</span>
+          </button>
+
+          <button id="playlist-toggle-btn" class="dock-icon-btn p-2 rounded-xl text-white/75 hover:text-white flex items-center gap-1.5" title="播放队列 (P)">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="8" y1="6" x2="21" y2="6"/>
+              <line x1="8" y1="12" x2="21" y2="12"/>
+              <line x1="8" y1="18" x2="21" y2="18"/>
+              <circle cx="4" cy="6" r="1.5" fill="currentColor"/>
+              <circle cx="4" cy="12" r="1.5" fill="currentColor"/>
+              <circle cx="4" cy="18" r="1.5" fill="currentColor"/>
+            </svg>
+            <span id="playlist-count" class="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-white/10 border border-white/15">5</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ======================================================= -->
+  <!-- 5. RAYCAST COMMAND SEARCH PALETTE (CMD+K)               -->
+  <!-- ======================================================= -->
+  <div id="command-palette-modal" class="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-black/80 opacity-0 pointer-events-none transition-all duration-300">
+    <div class="relative w-full max-w-2xl rounded-3xl bg-zinc-950 border border-white/20 shadow-[0_30px_90px_rgba(0,0,0,0.95)] overflow-hidden flex flex-col max-h-[78vh]">
+      
+      <!-- Search Input Header -->
+      <div class="flex items-center gap-3 px-5 py-3.5 border-b border-white/10">
+        <svg class="w-5 h-5 text-white/50 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input id="search-input" type="text" placeholder="搜索歌曲、歌手、专辑 (例如: 周杰伦 / 稻香 / 晴天 / 告白气球 / Taylor Swift)..." class="w-full bg-transparent text-sm text-white placeholder-white/35 focus:outline-none" autocomplete="off" />
+        <button id="search-clear-btn" class="hidden text-white/40 hover:text-white p-1 rounded-full text-xs font-mono shrink-0 transition-colors" title="清空输入">✕</button>
+        <span id="search-spinner" class="hidden w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin shrink-0"></span>
+        <kbd class="px-2 py-0.5 rounded bg-white/10 font-mono text-[11px] text-white/50 shrink-0">ESC</kbd>
+      </div>
+
+      <!-- Multi-Platform Source Selector & Discovery Navigation -->
+      <div class="flex items-center justify-between px-5 py-2.5 border-b border-white/10 bg-white/[0.02]">
+        <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5">
+          <span class="text-[11px] text-white/40 font-medium mr-1 shrink-0">搜索引擎:</span>
+          <button class="search-source-tab active px-2.5 py-1 rounded-full text-[11px] font-medium bg-white/15 text-white transition-all shrink-0" data-source="all">🌟 智能聚合</button>
+          <button class="search-source-tab px-2.5 py-1 rounded-full text-[11px] font-medium text-white/60 hover:text-white transition-all shrink-0" data-source="netease">🔴 网易云</button>
+          <button class="search-source-tab px-2.5 py-1 rounded-full text-[11px] font-medium text-white/60 hover:text-white transition-all shrink-0" data-source="kuwo">🔵 酷我高免播</button>
+          <button class="search-source-tab px-2.5 py-1 rounded-full text-[11px] font-medium text-white/60 hover:text-white transition-all shrink-0" data-source="kugou">🟣 酷狗音源</button>
+        </div>
+        <div id="chart-tag-chips" class="hidden md:flex items-center gap-1.5 shrink-0 pl-2 border-l border-white/10">
+          <button class="chart-tag-btn active px-2 py-0.5 rounded-full text-[11px] font-medium bg-white/10 text-white" data-chart="hot">热歌榜</button>
+          <button class="chart-tag-btn px-2 py-0.5 rounded-full text-[11px] font-medium text-white/50 hover:text-white" data-chart="soaring">飙升榜</button>
+          <button class="chart-tag-btn px-2 py-0.5 rounded-full text-[11px] font-medium text-white/50 hover:text-white" data-chart="acoustic">民谣</button>
+        </div>
+      </div>
+
+      <!-- Search Discovery: History & Quick Tags (shown when search is empty) -->
+      <div id="search-discovery-box" class="px-5 py-3 border-b border-white/5 bg-white/[0.01]">
+        <!-- Recent Search History -->
+        <div id="search-history-container" class="hidden mb-3">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] text-white/45 flex items-center gap-1 font-medium">
+              <svg class="w-3 h-3 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              搜索历史
+            </span>
+            <button id="clear-search-history-btn" class="text-[10px] text-white/35 hover:text-red-400 transition-colors">清空</button>
+          </div>
+          <div id="search-history-tags" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <!-- Hot Tags -->
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <span class="text-[11px] text-white/45 font-medium mr-1">🔥 大家都在搜:</span>
+          <button class="hot-search-chip px-2.5 py-0.5 rounded-full text-[11px] bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition-colors" data-keyword="周杰伦">周杰伦</button>
+          <button class="hot-search-chip px-2.5 py-0.5 rounded-full text-[11px] bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition-colors" data-keyword="稻香">稻香</button>
+          <button class="hot-search-chip px-2.5 py-0.5 rounded-full text-[11px] bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition-colors" data-keyword="晴天">晴天</button>
+          <button class="hot-search-chip px-2.5 py-0.5 rounded-full text-[11px] bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition-colors" data-keyword="林俊杰">林俊杰</button>
+          <button class="hot-search-chip px-2.5 py-0.5 rounded-full text-[11px] bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition-colors" data-keyword="告白气球">告白气球</button>
+          <button class="hot-search-chip px-2.5 py-0.5 rounded-full text-[11px] bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition-colors" data-keyword="陈奕迅">陈奕迅</button>
+          <button class="hot-search-chip px-2.5 py-0.5 rounded-full text-[11px] bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition-colors" data-keyword="起风了">起风了</button>
+          <button class="hot-search-chip px-2.5 py-0.5 rounded-full text-[11px] bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition-colors" data-keyword="Taylor Swift">Taylor Swift</button>
+          <button class="hot-search-chip px-2.5 py-0.5 rounded-full text-[11px] bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition-colors" data-keyword="光辉岁月">光辉岁月</button>
+        </div>
+      </div>
+
+      <!-- Search Results / Hot Chart List -->
+      <div id="search-results-list" class="flex-1 overflow-y-auto p-3 space-y-1.5 scrollbar-none min-h-[220px]">
+        <!-- Injected via JavaScript -->
+      </div>
+
+      <!-- Footer Info -->
+      <div class="px-5 py-2.5 border-t border-white/10 bg-black/40 flex items-center justify-between text-[11px] text-white/40 font-mono">
+        <span>↑↓ 键导航 · 回车键即刻播放 · 支持 + 键直接加到队列</span>
+        <span class="flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          智能多源容灾 · VIP无缝直达
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================= -->
+  <!-- 6. LYRIC POSTER CARD SHARE MODAL                        -->
+  <!-- ======================================================= -->
+  <div id="card-share-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 opacity-0 pointer-events-none transition-all duration-300">
+    <div class="relative w-full max-w-lg rounded-3xl p-6 bg-zinc-950/95 border border-white/20 shadow-2xl flex flex-col items-center">
+      
+      <!-- The Generated Card Surface to Export -->
+      <div id="exportable-lyric-card" class="relative w-full aspect-[4/5] rounded-2xl overflow-hidden p-8 flex flex-col justify-between shadow-2xl border border-white/15 select-none">
+        <!-- Card Blurred Cover Background -->
+        <div id="card-bg-cover" class="absolute inset-0 bg-cover bg-center filter blur-2xl brightness-50 scale-125"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/85"></div>
+        <div class="noise-overlay opacity-50"></div>
+
+        <!-- Card Header: Mini Art + Song Title -->
+        <div class="relative z-10 flex items-center gap-3">
+          <img id="card-art-thumb" src="" class="w-12 h-12 rounded-xl object-cover shadow-lg border border-white/20" />
+          <div>
+            <h4 id="card-song-title" class="text-base font-bold text-white font-display">七里香</h4>
+            <p id="card-song-artist" class="text-xs text-white/70">周杰伦</p>
+          </div>
+        </div>
+
+        <!-- Card Center: Highlighted Lyrics -->
+        <div class="relative z-10 py-6 text-center">
+          <span class="text-3xl text-white/30 font-serif leading-none">“</span>
+          <p id="card-lyric-chinese" class="text-xl md:text-2xl font-bold font-serif text-white tracking-wide leading-relaxed my-2">
+            雨下整夜 我的爱溢出就像雨水
+          </p>
+          <p id="card-lyric-trans" class="text-xs md:text-sm font-sans text-white/75 font-light tracking-wide">
+            Rain poured all night, my love overflows just like rainfall
+          </p>
+          <span class="text-3xl text-white/30 font-serif leading-none">”</span>
+        </div>
+
+        <!-- Card Footer: Stamp & Branding -->
+        <div class="relative z-10 flex items-center justify-between pt-4 border-t border-white/15 text-white/60">
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+            <span class="text-[10px] font-mono tracking-wider uppercase">AETHERIA SOUND · 沉浸之音</span>
+          </div>
+          <span class="text-[10px] font-mono text-white/40">NOW PLAYING</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="w-full flex items-center justify-between mt-6">
+        <button id="close-card-modal-btn" class="glass-pill-btn px-5 py-2 text-xs text-white/70 hover:text-white">取消</button>
+        <button id="download-card-btn" class="glass-pill-btn px-6 py-2 text-xs font-semibold bg-white text-black hover:bg-white/90 border-transparent shadow-lg flex items-center gap-2">
+          <svg class="w-4 h-4 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          下载高清海报图片
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================= -->
+  <!-- 6.5 NETEASE CLOUD MUSIC IMPORT MODAL                    -->
+  <!-- ======================================================= -->
+  <div id="netease-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 opacity-0 pointer-events-none transition-all duration-300">
+    <div class="relative w-full max-w-lg rounded-3xl p-6 bg-zinc-950/95 border border-white/20 shadow-2xl flex flex-col">
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-4 border-b border-white/10">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-red-500/20 border border-red-500/40 flex items-center justify-center shadow-lg shadow-red-500/10">
+            <svg class="w-4 h-4 text-red-500" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white font-display">导入网易云音乐歌单</h3>
+            <p class="text-[11px] text-white/50">支持歌单链接、歌单 ID 或 App 分享文本直接粘贴</p>
+          </div>
+        </div>
+        <button id="close-netease-modal-btn" class="glass-pill-btn p-1.5 text-white/60 hover:text-white">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Input Area -->
+      <div class="mt-5 space-y-3">
+        <label class="block text-xs font-medium text-white/70">网易云歌单链接 / 歌单 ID / 分享文本</label>
+        <div class="relative">
+          <textarea id="netease-input" rows="3" placeholder="例如: 3778678&#10;或粘贴: https://music.163.com/playlist?id=3778678&#10;支持直接粘贴手机网易云分享文本..." class="w-full bg-white/5 border border-white/15 focus:border-red-500/60 rounded-2xl p-3 text-xs text-white placeholder-white/30 focus:outline-none transition-colors resize-none font-mono"></textarea>
+        </div>
+
+        <!-- Quick Presets -->
+        <div>
+          <span class="text-[11px] text-white/40 block mb-2">🔥 热门官方榜单快速导入：</span>
+          <div class="flex flex-wrap gap-2">
+            <button class="netease-preset-btn px-2.5 py-1 rounded-full text-[11px] font-medium bg-white/5 hover:bg-white/10 text-white/75 hover:text-white border border-white/10 transition-colors" data-id="3778678">🔥 云音乐热歌榜</button>
+            <button class="netease-preset-btn px-2.5 py-1 rounded-full text-[11px] font-medium bg-white/5 hover:bg-white/10 text-white/75 hover:text-white border border-white/10 transition-colors" data-id="19723756">🚀 飙升榜</button>
+            <button class="netease-preset-btn px-2.5 py-1 rounded-full text-[11px] font-medium bg-white/5 hover:bg-white/10 text-white/75 hover:text-white border border-white/10 transition-colors" data-id="3779629">✨ 新歌榜</button>
+            <button class="netease-preset-btn px-2.5 py-1 rounded-full text-[11px] font-medium bg-white/5 hover:bg-white/10 text-white/75 hover:text-white border border-white/10 transition-colors" data-id="2884035">🎸 原创榜</button>
+          </div>
+        </div>
+
+        <!-- Options -->
+        <div class="flex items-center justify-between pt-1">
+          <label class="flex items-center gap-2 cursor-pointer text-xs text-white/70 select-none">
+            <input type="checkbox" id="netease-replace-queue" class="rounded accent-red-500" checked />
+            <span>替换当前播放队列 (取消勾选则追加至队尾)</span>
+          </label>
+        </div>
+
+        <!-- Status & Error Alert -->
+        <div id="netease-status" class="hidden p-3 rounded-xl text-xs flex items-center gap-2 border"></div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-white/10">
+        <button id="cancel-netease-btn" class="glass-pill-btn px-4 py-2 text-xs text-white/60 hover:text-white">取消</button>
+        <button id="submit-netease-btn" class="px-5 py-2 text-xs font-semibold rounded-full bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/30 flex items-center gap-2 transition-all">
+          <span id="netease-spinner" class="hidden w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
+          <span id="netease-submit-text">开始同步导入</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================= -->
+  <!-- 7. SLIDE-OVER PLAYLIST DRAWER                           -->
+  <!-- ======================================================= -->
+  <aside id="playlist-drawer" class="fixed top-0 right-0 bottom-0 w-80 md:w-96 z-50 bg-[#0e0e16] border-l border-white/15 p-6 flex flex-col transform translate-x-full transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] shadow-2xl">
+    <div class="flex items-center justify-between pb-3 border-b border-white/10">
+      <div>
+        <h3 class="text-lg font-bold font-display text-white">当前播放队列</h3>
+        <p class="text-xs text-white/50">支持 Cmd+K 全网搜索添加新歌曲</p>
+      </div>
+      <button id="close-playlist-btn" class="glass-pill-btn p-2 text-white/70 hover:text-white">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Quick Import & Reset Actions Inside Drawer -->
+    <div class="pt-3 pb-1 flex items-center gap-2">
+      <button id="drawer-netease-btn" class="flex-1 py-2 px-3 text-xs rounded-xl flex items-center justify-center gap-1.5 border border-red-500/30 hover:border-red-500/60 bg-red-500/10 hover:bg-red-500/20 text-red-200 transition-all font-medium shadow-sm">
+        <svg class="w-3.5 h-3.5 text-red-400" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/>
+        </svg>
+        导入网易云
+      </button>
+      <button id="reset-playlist-btn" class="py-2 px-3 text-xs rounded-xl flex items-center justify-center gap-1 border border-white/10 hover:border-white/25 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all font-medium" title="恢复为系统预置曲库">
+        恢复默认
+      </button>
+    </div>
+    <div class="px-1 pt-1.5 flex items-center justify-between text-[10px] text-white/40">
+      <span class="flex items-center gap-1 text-emerald-400/90 font-medium">
+        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        歌单已自动持久化保存
+      </span>
+      <span id="playlist-drawer-count" class="font-mono">共 0 首</span>
+    </div>
+
+    <div id="playlist-items" class="flex-1 overflow-y-auto py-4 space-y-2 pr-1 scrollbar-none">
+      <!-- Populated via JavaScript -->
+    </div>
+
+    <div class="pt-4 border-t border-white/10 text-center">
+      <p class="text-[11px] text-white/40">快捷键: 空格(播放/暂停) · ←/→(快进/退) · V(切换视图)</p>
+    </div>
+  </aside>
+
+  <!-- ======================================================= -->
+  <!-- 8. KEYBOARD & HELP MODAL                                -->
+  <!-- ======================================================= -->
+  <div id="help-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/75">
+    <div class="relative w-full max-w-md mx-4 p-6 rounded-3xl bg-zinc-900 border border-white/20 shadow-2xl">
+      <h3 class="text-lg font-bold font-display mb-1 text-white">沉浸式听歌体验指南</h3>
+      <p class="text-xs text-white/60 mb-4">全屏流动光影 · 动态逐行歌词 · 纯净体验</p>
+      
+      <div class="space-y-2.5 text-xs text-white/80">
+        <div class="flex justify-between py-1.5 border-b border-white/10">
+          <span class="text-white/50">全网搜歌 / 榜单</span>
+          <kbd class="px-2 py-0.5 rounded bg-white/10 font-mono text-[11px]">Cmd / Ctrl + K</kbd>
+        </div>
+        <div class="flex justify-between py-1.5 border-b border-white/10">
+          <span class="text-white/50">播放 / 暂停</span>
+          <kbd class="px-2 py-0.5 rounded bg-white/10 font-mono text-[11px]">Space</kbd>
+        </div>
+        <div class="flex justify-between py-1.5 border-b border-white/10">
+          <span class="text-white/50">快退 5 秒 / 快进 5 秒</span>
+          <div class="flex gap-1">
+            <kbd class="px-2 py-0.5 rounded bg-white/10 font-mono text-[11px]">←</kbd>
+            <kbd class="px-2 py-0.5 rounded bg-white/10 font-mono text-[11px]">→</kbd>
+          </div>
+        </div>
+        <div class="flex justify-between py-1.5 border-b border-white/10">
+          <span class="text-white/50">上一首 / 下一首</span>
+          <div class="flex gap-1">
+            <kbd class="px-2 py-0.5 rounded bg-white/10 font-mono text-[11px]">Shift + ←</kbd>
+            <kbd class="px-2 py-0.5 rounded bg-white/10 font-mono text-[11px]">Shift + →</kbd>
+          </div>
+        </div>
+        <div class="flex justify-between py-1.5 border-b border-white/10">
+          <span class="text-white/50">音量加 / 减</span>
+          <div class="flex gap-1">
+            <kbd class="px-2 py-0.5 rounded bg-white/10 font-mono text-[11px]">↑</kbd>
+            <kbd class="px-2 py-0.5 rounded bg-white/10 font-mono text-[11px]">↓</kbd>
+          </div>
+        </div>
+        <div class="flex justify-between py-1.5 border-b border-white/10">
+          <span class="text-white/50">全屏沉浸模式</span>
+          <kbd class="px-2 py-0.5 rounded bg-white/10 font-mono text-[11px]">F</kbd>
+        </div>
+        <div class="flex justify-between py-1.5 border-b border-white/10">
+          <span class="text-white/50">切换布局视图</span>
+          <kbd class="px-2 py-0.5 rounded bg-white/10 font-mono text-[11px]">V</kbd>
+        </div>
+        <div class="flex justify-between py-1.5 border-b border-white/10">
+          <span class="text-white/50">点击任意歌词</span>
+          <span class="text-emerald-400 font-medium">直接精确定位并跳转音频进度</span>
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-end">
+        <button id="close-help-btn" class="glass-pill-btn px-4 py-1.5 text-xs text-white">知道了</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dynamic Island Audio Spec HUD (SwiftUI Design) -->
+  <div id="dynamic-island-modal" class="fixed top-20 left-6 md:left-12 z-50 w-80 p-5 rounded-3xl bg-[#0c0c14] border border-white/15 shadow-2xl shadow-black/80">
+    <div class="flex items-center justify-between pb-3 border-b border-white/10">
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-xs font-bold uppercase tracking-wider text-white">Apple Audio Master</span>
+      </div>
+      <button id="close-dynamic-island-btn" class="text-white/40 hover:text-white text-xs p-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+    </div>
+    <div class="mt-3.5 space-y-3 text-xs">
+      <div class="flex justify-between items-center text-white/70">
+        <span>编码格式</span>
+        <span class="font-mono font-semibold text-emerald-400">ALAC · Lossless</span>
+      </div>
+      <div class="flex justify-between items-center text-white/70">
+        <span>采样率 / 位深</span>
+        <span class="font-mono text-white/90">96.0 kHz / 24-bit</span>
+      </div>
+      <div class="flex justify-between items-center text-white/70">
+        <span>渲染引擎</span>
+        <span class="font-mono text-white/90">Apple Music Hi-Fi Canvas</span>
+      </div>
+      <div class="flex justify-between items-center text-white/70">
+        <span>空间音频</span>
+        <span class="px-2 py-0.5 rounded-full bg-white/10 text-amber-300 font-mono text-[10px]">Apple Spatial 3D</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Dynamic Island Toast Notification -->
+  <div id="app-toast" class="fixed top-12 left-1/2 -translate-x-1/2 z-[60] pointer-events-none opacity-0 -translate-y-3 transition-all duration-300 ease-out flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#12121a]/95 backdrop-blur-2xl border border-white/20 shadow-[0_12px_36px_rgba(0,0,0,0.7)] text-xs text-white">
+    <span id="toast-icon" class="text-sm">✨</span>
+    <span id="toast-text" class="font-medium"></span>
+  </div>
+
+  <audio id="audio-player" preload="auto" crossorigin="anonymous"></audio>
+
+  <!-- Modular Scripts Loaded in Order -->
+  <script src="api.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
