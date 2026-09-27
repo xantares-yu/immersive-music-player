@@ -1,0 +1,31 @@
+{
+  "name": "immersive-music-player",
+  "productName": "Aetheria Sound",
+  "version": "1.0.0",
+  "description": "基于 WebGL GLSL 流体着色器与 Apple Music Sing 沉浸流光美学的全屏音乐 Web 应用",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "music-player",
+    "webgl",
+    "glsl",
+    "shaders",
+    "apple-music",
+    "web-audio-api",
+    "karaoke-lyrics",
+    "raycast-ui"
+  ],
+  "author": "于腾博 <yutengbo305@gmail.com> (https://github.com/xantares-yu)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xantares-yu/immersive-music-player.git"
+  },
+  "bugs": {
+    "url": "https://github.com/xantares-yu/immersive-music-player/issues"
+  },
+  "homepage": "https://github.com/xantares-yu/immersive-music-player#readme"
+}
