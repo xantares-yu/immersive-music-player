@@ -1,0 +1,143 @@
+/* ==========================================================================
+   Aetheria Sound · Intelligent Album Cover Motion CSS Engine
+   Supports:
+   1. Mode A (Person Detected): Character Chest Breathing + Subtle Camera Follow
+   2. Mode B (No Person / Scene): Cinematic Scene Panning + Optical Depth-of-Field Drift
+   3. Zero Liquid Slice Artifacts (Stripe Canvas 100% Disabled)
+   4. Single Static Cover Input Compatibility
+   ========================================================================== */
+
+#cover-perspective-box {
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+
+#cover-perspective-box.cover-motion-ready {
+  --cover-motion-energy: 0;
+  --cam-rotate-x: 0deg;
+  --cam-rotate-y: 0deg;
+  --cam-trans-x: 0px;
+  --cam-trans-y: 0px;
+  --breath-scale-x: 1;
+  --breath-scale-y: 1;
+  --breath-y: 0px;
+  --char-parallax-x: 0px;
+  --char-parallax-y: 0px;
+  --scene-scale: 1.15;
+  --scene-pan-x: 0px;
+  --scene-pan-y: 0px;
+  --scene-contrast: 1.02;
+  --scene-brightness: 1.01;
+  --scene-light-angle: 120deg;
+  isolation: isolate;
+}
+
+/* Ambient dynamic blurred back-glow behind acrylic sleeve */
+#cover-perspective-box.cover-motion-ready::before {
+  content: "";
+  position: absolute;
+  inset: -14%;
+  z-index: -2;
+  border-radius: 36px;
+  background: var(--cover-motion-image, none) center/cover;
+  filter: blur(34px) saturate(1.4);
+  opacity: calc(0.18 + var(--cover-motion-energy, 0) * 0.42);
+  transform: scale(calc(0.92 + var(--cover-motion-energy, 0) * 0.12));
+  transition: opacity 160ms ease-out, transform 160ms ease-out;
+  pointer-events: none;
+}
+
+/* Interactive Camera Follow 3D perspective applied to the acrylic album sleeve */
+#cover-perspective-box.cover-motion-ready #cover-card {
+  transform: perspective(1000px)
+             rotateX(var(--cam-rotate-x, 0deg))
+             rotateY(var(--cam-rotate-y, 0deg))
+             translate3d(var(--cam-trans-x, 0px), var(--cam-trans-y, 0px), 0)
+             scale3d(var(--beat-scale, 1), var(--beat-scale, 1), 1);
+  will-change: transform;
+}
+
+/* ==========================================================================
+   MODE A: 人物呼吸 + 轻微镜头跟随 (cover-has-person)
+   ========================================================================== */
+#cover-perspective-box.cover-has-person #cover-image {
+  transform-origin: var(--breath-origin-x, 50%) var(--breath-origin-y, 68%);
+  transform: translate3d(var(--char-parallax-x, 0px), calc(var(--char-parallax-y, 0px) + var(--breath-y, 0px)), 0)
+             scaleX(var(--breath-scale-x, 1))
+             scaleY(var(--breath-scale-y, 1));
+  will-change: transform, filter;
+  filter: contrast(calc(1.01 + var(--cover-motion-energy, 0) * 0.04))
+          brightness(calc(1.0 + var(--cover-motion-energy, 0) * 0.05));
+  opacity: 1 !important;
+}
+
+/* Portrait Contour Light Highlight Sheen */
+#cover-perspective-box.cover-has-person #cover-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(circle at calc(50% + var(--char-parallax-x, 0px) * 1.6) calc(42% + var(--char-parallax-y, 0px) * 1.6),
+              rgba(255, 255, 255, calc(0.12 + var(--cover-motion-energy, 0) * 0.18)) 0%,
+              transparent 65%);
+  mix-blend-mode: overlay;
+  z-index: 12;
+  opacity: 0.85;
+}
+
+/* ==========================================================================
+   MODE B: 场景平移 + 景深漂移 (cover-scene-mode)
+   ========================================================================== */
+#cover-perspective-box.cover-scene-mode #cover-image {
+  transform-origin: 50% 50%;
+  transform: translate3d(var(--scene-pan-x, 0px), var(--scene-pan-y, 0px), 0)
+             scale(var(--scene-scale, 1.15));
+  will-change: transform, filter;
+  filter: contrast(var(--scene-contrast, 1.02))
+          brightness(var(--scene-brightness, 1.01));
+  opacity: 1 !important;
+}
+
+/* Atmospheric Volumetric Lighting Drift for Scenery */
+#cover-perspective-box.cover-scene-mode #cover-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(var(--scene-light-angle, 120deg),
+              rgba(255, 255, 255, calc(0.13 + var(--cover-motion-energy, 0) * 0.15)) 0%,
+              transparent 45%,
+              rgba(0, 0, 0, 0.22) 100%);
+  mix-blend-mode: soft-light;
+  z-index: 12;
+  opacity: 0.9;
+}
+
+/* Old liquid slice canvas is 100% permanently turned off */
+.cover-motion-canvas {
+  display: none !important;
+}
+
+/* Ensure sleeve inner container hides overflowing scaled edges cleanly */
+#cover-card > div {
+  overflow: hidden !important;
+}
+
+/* Accessibility: respect user prefers-reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  #cover-perspective-box.cover-motion-ready #cover-card {
+    transform: none !important;
+    transition: none !important;
+  }
+  #cover-perspective-box.cover-has-person #cover-image,
+  #cover-perspective-box.cover-scene-mode #cover-image {
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+  }
+  #cover-perspective-box::after {
+    display: none !important;
+  }
+}

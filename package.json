@@ -3,10 +3,13 @@
   "productName": "Aetheria Sound",
   "version": "1.0.0",
   "description": "基于 WebGL GLSL 流体着色器与 Apple Music Sing 沉浸流光美学的全屏音乐 Web 应用",
-  "main": "server.js",
+  "main": "electron/main.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "app": "electron .",
+    "desktop": "electron .",
+    "electron": "electron .",
+    "generate-icons": "electron electron/generate-icons.js"
   },
   "keywords": [
     "music-player",
@@ -27,5 +30,8 @@
   "bugs": {
     "url": "https://github.com/xantares-yu/immersive-music-player/issues"
   },
-  "homepage": "https://github.com/xantares-yu/immersive-music-player#readme"
+  "homepage": "https://github.com/xantares-yu/immersive-music-player#readme",
+  "devDependencies": {
+    "electron": "^44.7.0"
+  }
 }
